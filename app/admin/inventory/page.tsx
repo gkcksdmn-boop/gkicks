@@ -570,8 +570,7 @@ export default function InventoryPage() {
           description: "Product archived successfully",
         })
         loadProducts()
-        // Navigate to archive page
-        window.location.href = '/admin/archive'
+        // Stay on current page after archiving
       } else {
         throw new Error('Failed to archive product')
       }

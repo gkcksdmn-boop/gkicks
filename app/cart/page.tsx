@@ -44,6 +44,7 @@ export default function CartPage() {
     street: string
     city: string
     province: string
+    barangay: string
     zipCode: string
     country: string
   }>({
@@ -52,6 +53,7 @@ export default function CartPage() {
     street: "",
     city: "",
     province: "",
+    barangay: "",
     zipCode: "",
     country: "",
   })
@@ -216,6 +218,7 @@ export default function CartPage() {
           street: addressData?.address_line_1 || "",
           city: addressData?.city || "",
           province: addressData?.state || "",
+          barangay: addressData?.barangay || "",
           zipCode: addressData?.postal_code || "",
           country: addressData?.country || "",
         }
@@ -390,6 +393,16 @@ export default function CartPage() {
       toast({
         title: "Missing Information",
         description: "Please fill in all shipping information.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    // Validate barangay field
+    if (!shippingInfo.barangay || shippingInfo.barangay.trim() === "") {
+      toast({
+        title: "Barangay Required",
+        description: "Please input your barangay first before placing your order.",
         variant: "destructive",
       })
       return
@@ -1094,6 +1107,7 @@ export default function CartPage() {
                     <LocationSelector
                       selectedProvince={shippingInfo.province}
                       selectedCity={shippingInfo.city}
+                      selectedBarangay={shippingInfo.barangay}
                       onProvinceChange={(province) => {
                         setShippingInfo({ ...shippingInfo, province })
                         // Automatically update shipping region based on province
@@ -1101,6 +1115,7 @@ export default function CartPage() {
                         setShippingLocation(region)
                       }}
                       onCityChange={(city) => setShippingInfo({ ...shippingInfo, city })}
+                      onBarangayChange={(barangay) => setShippingInfo({ ...shippingInfo, barangay })}
                       disabled={true}
                     />
                     <div>
@@ -1468,6 +1483,8 @@ export default function CartPage() {
                     ))}
                   </div>
                 </div>
+
+
 
                 <div className="text-center text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   <p>Order confirmation has been sent to {completedOrder.customer_email}</p>

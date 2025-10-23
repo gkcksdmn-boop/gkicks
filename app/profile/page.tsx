@@ -41,6 +41,7 @@ interface Address {
   state: string
   postal_code: string
   country: string
+  barangay?: string
   shipping_region?: string
   is_default: boolean
 }
@@ -96,6 +97,7 @@ export default function ProfilePage() {
     street_address: "",
     city: "",
     state_province: "",
+    barangay: "",
     zip_code: "",
     country: "Philippines",
     shipping_region: "Luzon",
@@ -314,6 +316,7 @@ export default function ProfilePage() {
           state_province: firstAddress.state || "",
           zip_code: firstAddress.postal_code || "",
           country: firstAddress.country || "Philippines",
+          barangay: firstAddress.barangay || "",
           shipping_region: firstAddress.shipping_region || "Luzon",
           is_default: firstAddress.is_default || false,
         })
@@ -519,6 +522,7 @@ export default function ProfilePage() {
         state: addressData.state_province.trim(),
         postal_code: addressData.zip_code.trim(),
         country: addressData.country,
+        barangay: addressData.barangay.trim(),
         shipping_region: addressData.shipping_region,
         first_name: profileData.first_name.trim() || user?.firstName || 'User',
         last_name: profileData.last_name.trim() || user?.lastName || 'Name',
@@ -610,15 +614,7 @@ export default function ProfilePage() {
       const wasCurrentAddress = currentAddressId === addressId
       if (wasCurrentAddress) {
         setCurrentAddressId(null)
-        setAddressData({
-          street_address: "",
-          city: "",
-          state_province: "",
-          zip_code: "",
-          country: "Philippines",
-          shipping_region: "Luzon",
-          is_default: false,
-        })
+ 
       }
 
       await fetchAddresses(!wasCurrentAddress)
@@ -637,6 +633,7 @@ export default function ProfilePage() {
       street_address: "",
       city: "",
       state_province: "",
+      barangay: "",
       zip_code: "",
       country: "Philippines",
       shipping_region: "Luzon",
@@ -652,6 +649,7 @@ export default function ProfilePage() {
       state_province: address.state || "",
       zip_code: address.postal_code || "",
       country: address.country || "Philippines",
+      barangay: address.barangay || "",
       shipping_region: address.shipping_region || "Luzon",
       is_default: address.is_default || false,
     })
@@ -946,6 +944,7 @@ export default function ProfilePage() {
                       <LocationSelector
                         selectedProvince={addressData.state_province}
                         selectedCity={addressData.city}
+                        selectedBarangay={addressData.barangay}
                         onProvinceChange={(province) => {
                           // Determine shipping region based on province
                           const getShippingRegionByProvince = (province: string): 'Luzon' | 'Visayas/Mindanao' => {
@@ -968,6 +967,7 @@ export default function ProfilePage() {
                           }))
                         }}
                         onCityChange={(city) => setAddressData((prev) => ({ ...prev, city }))}
+                        onBarangayChange={(barangay) => setAddressData((prev) => ({ ...prev, barangay }))}
                         required
                       />
 
@@ -1057,7 +1057,7 @@ export default function ProfilePage() {
                                   )}
                                 </div>
                                 <p className="text-foreground text-sm">
-                                  {address.city}, {address.state} {address.postal_code}
+                                  {address.barangay && `${address.barangay}, `}{address.city}, {address.state} {address.postal_code}
                                 </p>
                                 <p className="text-muted-foreground text-sm">{address.country}</p>
                               </div>

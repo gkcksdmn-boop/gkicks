@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { type Order } from "@/lib/admin-data"
-import { Search, Eye, Package, Truck, CheckCircle, XCircle, Clock, Filter, RefreshCw, Archive } from "lucide-react"
+import { Search, Eye, Package, Truck, CheckCircle, XCircle, Clock, Filter, RefreshCw, Archive, Trash2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Checkbox } from "@/components/ui/checkbox"
 
 
 export default function AdminOrdersPage() {
@@ -41,7 +42,11 @@ export default function AdminOrdersPage() {
   const [orderToArchive, setOrderToArchive] = useState<Order | null>(null)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<Record<string, boolean>>({})
   const [disabledButtons, setDisabledButtons] = useState<Record<string, Set<string>>>({})
+  const [lastSyncInfo, setLastSyncInfo] = useState<{orderId: string, updatedBy: string, timestamp: number} | null>(null)
   const [lastClickedStatus, setLastClickedStatus] = useState<Record<string, Order["status"] | null>>({})
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set())
+  const [isSelectAll, setIsSelectAll] = useState(false)
+  const [isBulkArchiving, setIsBulkArchiving] = useState(false)
   const { toast } = useToast()
 
   // Load disabled buttons from localStorage on component mount
@@ -73,6 +78,26 @@ export default function AdminOrdersPage() {
       localStorage.setItem('admin_disabled_buttons', JSON.stringify(serializable))
     }
   }, [disabledButtons])
+
+  // Save last clicked status to localStorage whenever it changes
+  useEffect(() => {
+    if (Object.keys(lastClickedStatus).length > 0) {
+      localStorage.setItem('admin_last_clicked_status', JSON.stringify(lastClickedStatus))
+    }
+  }, [lastClickedStatus])
+
+  // Load last clicked status from localStorage on component mount
+  useEffect(() => {
+    const savedLastClickedStatus = localStorage.getItem('admin_last_clicked_status')
+    if (savedLastClickedStatus) {
+      try {
+        const parsed = JSON.parse(savedLastClickedStatus)
+        setLastClickedStatus(parsed)
+      } catch (error) {
+        console.error('Error loading last clicked status from localStorage:', error)
+      }
+    }
+  }, [])
 
   // Check authentication
   useEffect(() => {
@@ -143,6 +168,26 @@ export default function AdminOrdersPage() {
       broadcastRef.current.onmessage = (event: MessageEvent) => {
         const data: any = event?.data
         if (data && data.type === 'order-updated') {
+          // Store sync info for visual feedback
+          setLastSyncInfo({
+            orderId: data.orderId,
+            updatedBy: data.updatedBy || 'Another user',
+            timestamp: data.timestamp || Date.now()
+          })
+          
+          // Sync last clicked status from other tabs
+          if (data.lastClickedStatus) {
+            setLastClickedStatus(prev => ({
+              ...prev,
+              ...data.lastClickedStatus
+            }))
+          }
+          
+          // Clear sync info after 5 seconds
+          setTimeout(() => {
+            setLastSyncInfo(null)
+          }, 5000)
+          
           loadOrders(true)
         }
       }
@@ -183,6 +228,17 @@ export default function AdminOrdersPage() {
       return () => clearTimeout(timer)
     }
   }, [searchParams])
+
+  // Update select all state when filtered orders change
+  useEffect(() => {
+    if (filteredOrders.length === 0) {
+      setIsSelectAll(false)
+      setSelectedOrders(new Set())
+    } else {
+      const allSelected = filteredOrders.every(order => selectedOrders.has(order.id))
+      setIsSelectAll(allSelected)
+    }
+  }, [filteredOrders])
 
   useEffect(() => {
     // Filter orders based on search term and status
@@ -260,8 +316,15 @@ export default function AdminOrdersPage() {
           title: "Order Updated",
           description: `Order status changed to ${newStatus}`,
         })
-        // Notify other same-origin tabs and refresh silently
-        broadcastRef.current?.postMessage({ type: 'order-updated', orderId, status: newStatus, at: Date.now() })
+        // Notify other same-origin tabs and refresh silently with detailed info
+        broadcastRef.current?.postMessage({ 
+          type: 'order-updated', 
+          orderId, 
+          status: newStatus, 
+          updatedBy: state.user?.email || 'Unknown',
+          timestamp: Date.now(),
+          lastClickedStatus: { ...lastClickedStatus, [orderId]: newStatus }
+        })
         loadOrders(true)
       } else {
         // Read body once to avoid "body stream already read" errors
@@ -327,8 +390,7 @@ export default function AdminOrdersPage() {
           title: "Order Archived",
           description: "Order has been successfully archived",
         })
-        // Navigate to archive page
-        window.location.href = '/admin/archive'
+        // Stay on current page after archiving
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
         console.error('❌ Frontend: Archive failed:', response.status, errorData)
@@ -364,6 +426,126 @@ export default function AdminOrdersPage() {
     } finally {
       setIsArchiveDialogOpen(false)
       setOrderToArchive(null)
+    }
+  }
+
+  // Handle select all functionality
+  const handleSelectAll = () => {
+    if (isSelectAll) {
+      setSelectedOrders(new Set())
+      setIsSelectAll(false)
+    } else {
+      const allOrderIds = new Set(filteredOrders.map(order => order.id))
+      setSelectedOrders(allOrderIds)
+      setIsSelectAll(true)
+    }
+  }
+
+  // Handle individual order selection
+  const handleOrderSelect = (orderId: string) => {
+    const newSelected = new Set(selectedOrders)
+    if (newSelected.has(orderId)) {
+      newSelected.delete(orderId)
+    } else {
+      newSelected.add(orderId)
+    }
+    setSelectedOrders(newSelected)
+    
+    // Update select all state based on current selection
+    const allSelected = filteredOrders.every(order => newSelected.has(order.id))
+    setIsSelectAll(allSelected && filteredOrders.length > 0)
+  }
+
+  // Handle bulk archive
+  const handleBulkArchive = async () => {
+    if (selectedOrders.size === 0) {
+      toast({
+        title: "No Orders Selected",
+        description: "Please select orders to archive",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsBulkArchiving(true)
+    const selectedOrderIds = Array.from(selectedOrders)
+    let successCount = 0
+    let failCount = 0
+
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+      
+      if (!token) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in as admin or staff to archive orders.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      }
+
+      // Archive orders one by one
+      for (const orderId of selectedOrderIds) {
+        try {
+          const response = await fetch(`/api/admin/orders/${orderId}`, {
+            method: 'DELETE',
+            headers,
+          })
+
+          if (response.ok) {
+            successCount++
+          } else {
+            failCount++
+            console.error(`Failed to archive order ${orderId}:`, response.status)
+          }
+        } catch (error) {
+          failCount++
+          console.error(`Error archiving order ${orderId}:`, error)
+        }
+      }
+
+      // Update UI by removing successfully archived orders
+      if (successCount > 0) {
+        setOrders((prevOrders) => 
+          prevOrders.filter((order) => !selectedOrderIds.includes(order.id))
+        )
+        setSelectedOrders(new Set())
+      }
+
+      // Show results
+      if (successCount > 0 && failCount === 0) {
+        toast({
+          title: "Bulk Archive Successful",
+          description: `Successfully archived ${successCount} order${successCount > 1 ? 's' : ''}`,
+        })
+      } else if (successCount > 0 && failCount > 0) {
+        toast({
+          title: "Partial Success",
+          description: `Archived ${successCount} order${successCount > 1 ? 's' : ''}, failed to archive ${failCount}`,
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Archive Failed",
+          description: `Failed to archive ${failCount} order${failCount > 1 ? 's' : ''}`,
+          variant: "destructive",
+        })
+      }
+
+    } catch (error) {
+      console.error('Bulk archive error:', error)
+      toast({
+        title: "Network Error",
+        description: "Unable to connect to server. Please check your connection.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsBulkArchiving(false)
     }
   }
 
@@ -443,6 +625,18 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="p-6 space-y-6 bg-background min-h-screen">
+      {/* Sync Notification */}
+      {lastSyncInfo && (
+        <div className="fixed top-4 right-4 z-50 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg animate-in slide-in-from-right-5">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+            <span className="text-sm">
+              Order #{lastSyncInfo.orderId} updated by {lastSyncInfo.updatedBy}
+            </span>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
@@ -501,14 +695,56 @@ export default function AdminOrdersPage() {
       {/* Orders List */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="text-foreground">Customer Orders</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            {filteredOrders.length === 0 && orders.length === 0
-              ? "No orders found - orders will appear here when customers make purchases"
-              : filteredOrders.length === 0
-                ? "No orders match your filters"
-                : `Showing ${filteredOrders.length} of ${orders.length} orders`}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-foreground">Customer Orders</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                {filteredOrders.length === 0 && orders.length === 0
+                  ? "No orders found - orders will appear here when customers make purchases"
+                  : filteredOrders.length === 0
+                    ? "No orders match your filters"
+                    : `Showing ${filteredOrders.length} of ${orders.length} orders`}
+              </CardDescription>
+            </div>
+            {filteredOrders.length > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="select-all"
+                    checked={isSelectAll}
+                    onCheckedChange={handleSelectAll}
+                  />
+                  <label
+                    htmlFor="select-all"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Select All
+                  </label>
+                </div>
+                {selectedOrders.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkArchive}
+                    disabled={isBulkArchiving}
+                    className="flex items-center gap-2"
+                  >
+                    {isBulkArchiving ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Archiving...
+                      </>
+                    ) : (
+                      <>
+                        <Archive className="h-4 w-4" />
+                        Archive Selected ({selectedOrders.size})
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {filteredOrders.length === 0 ? (
@@ -547,16 +783,22 @@ export default function AdminOrdersPage() {
                 >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-medium text-foreground">#{index + 1}</h3>
-                          <Badge className={`${getStatusColor(order.status)} flex items-center gap-1 text-xs`}>
-                            {getStatusIcon(order.status)}
-                            <span className="hidden xs:inline">{order.status}</span>
-                          </Badge>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Checkbox
+                          checked={selectedOrders.has(order.id)}
+                          onCheckedChange={() => handleOrderSelect(order.id)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-foreground">#{index + 1}</h3>
+                            <Badge className={`${getStatusColor(order.status)} flex items-center gap-1 text-xs`}>
+                              {getStatusIcon(order.status)}
+                              <span className="hidden xs:inline">{order.status}</span>
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate pr-2">{order.customerName || "Unknown Customer"}</p>
+                          <p className="text-xs text-muted-foreground truncate pr-2">{order.customerEmail || "No email"}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground truncate pr-2">{order.customerName || "Unknown Customer"}</p>
-                        <p className="text-xs text-muted-foreground truncate pr-2">{order.customerEmail || "No email"}</p>
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="font-medium text-foreground text-sm sm:text-base">{formatCurrency(order.total)}</p>
@@ -698,6 +940,9 @@ export default function AdminOrdersPage() {
                     <>
                       <p className="text-foreground text-sm">{(selectedOrder.shippingAddress as any).fullName || 'N/A'}</p>
                       <p className="text-foreground text-sm">{(selectedOrder.shippingAddress as any).street || 'N/A'}</p>
+                      {(selectedOrder.shippingAddress as any).barangay && (
+                        <p className="text-foreground text-sm">{(selectedOrder.shippingAddress as any).barangay}</p>
+                      )}
                       <p className="text-foreground text-sm">
                         {(selectedOrder.shippingAddress as any).city || 'N/A'}, {(selectedOrder.shippingAddress as any).province || 'N/A'} {(selectedOrder.shippingAddress as any).zipCode || 'N/A'}
                       </p>

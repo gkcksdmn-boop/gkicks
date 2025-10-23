@@ -428,14 +428,12 @@ export async function POST(request: NextRequest) {
         total: totalAmount,
         // Normalize shipping address keys coming from cart/profile
         shippingAddress: {
-          fullName: shipping_address?.fullName || '',
           street: shipping_address?.street || shipping_address?.address || '',
+          barangay: shipping_address?.barangay || '',
           city: shipping_address?.city || '',
-          province: shipping_address?.province || shipping_address?.state || '',
+          state: shipping_address?.province || shipping_address?.state || '',
           zipCode: shipping_address?.zipCode || shipping_address?.postalCode || '',
-          country: shipping_address?.country || 'Philippines',
-          shipping_region: shipping_address?.shipping_region || 'Luzon',
-          phone: shipping_address?.phone || ''
+          country: shipping_address?.country || 'Philippines'
         },
         orderDate: new Date().toLocaleDateString('en-US', {
           year: 'numeric',

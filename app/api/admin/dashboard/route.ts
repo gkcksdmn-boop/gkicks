@@ -30,11 +30,25 @@ export async function GET(request: NextRequest) {
     // Verify token
     let decoded
     try {
-      decoded = jwt.verify(token, JWT_SECRET) as { userId: string, email: string }
+      decoded = jwt.verify(token, JWT_SECRET) as { id?: string, userId?: string, email: string, is_admin?: boolean }
+      console.log('✅ Dashboard API: Token verified for user:', decoded.email)
     } catch (error) {
-      console.log('❌ Dashboard API: Invalid token')
+      console.log('❌ Dashboard API: Invalid token:', error)
       return NextResponse.json(
         { error: 'Invalid authentication token' },
+        { status: 401 }
+      )
+    }
+
+    // Use id or userId from token
+    const userId = decoded.id || decoded.userId
+    console.log('🔍 Dashboard API: Checking admin permissions for user ID:', userId)
+
+    // Validate userId exists
+    if (!userId) {
+      console.log('❌ Dashboard API: No user ID found in token')
+      return NextResponse.json(
+        { error: 'Invalid token: missing user ID' },
         { status: 401 }
       )
     }
@@ -42,7 +56,7 @@ export async function GET(request: NextRequest) {
     // Check if user is admin or staff with dashboard permissions
     const adminUsers = await executeQuery(
       'SELECT id, email, is_admin FROM users WHERE id = ? AND is_admin = 1',
-      [decoded.userId]
+      [userId]
     ) as any[]
 
     // Check if user is staff in admin_users table
@@ -50,6 +64,9 @@ export async function GET(request: NextRequest) {
       'SELECT id, email, role, permissions FROM admin_users WHERE email = ? AND role = "staff" AND is_active = 1',
       [decoded.email]
     ) as any[]
+
+    console.log('🔍 Dashboard API: Admin users found:', adminUsers.length)
+    console.log('🔍 Dashboard API: Staff users found:', staffUsers.length)
 
     // Deny access for staff users (dashboard access removed)
     if (adminUsers.length === 0 && staffUsers.length > 0) {
@@ -250,8 +267,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(dashboardStats)
   } catch (error) {
     console.error('❌ API: Error fetching dashboard data:', error)
+    console.error('❌ API: Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    console.error('❌ API: Error message:', error instanceof Error ? error.message : String(error))
     return NextResponse.json(
-      { error: 'Failed to fetch dashboard data' },
+      { error: 'Failed to fetch dashboard data', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }

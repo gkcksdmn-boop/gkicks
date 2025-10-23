@@ -165,17 +165,17 @@ export default function OrdersPage() {
   const handleMarkAsDelivered = async (orderId: string) => {
     try {
       const token = localStorage.getItem('auth_token')
-      const response = await fetch(`/api/admin/orders/${orderId}`, {
+      const response = await fetch(`/api/orders/${orderId}/delivered`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: 'delivered' })
+        }
       })
 
       if (!response.ok) {
-        throw new Error('Failed to mark order as delivered')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || 'Failed to mark order as delivered')
       }
 
       // Refresh orders list
@@ -189,10 +189,12 @@ export default function OrdersPage() {
         setSelectedOrder({ ...selectedOrder, status: 'delivered' })
       }
 
-      alert('Order marked as delivered successfully!')
+      // Close dialog and show success message
+      setIsDialogOpen(false)
+      alert('✅ Order marked as delivered successfully! Admin and staff have been notified via email.')
     } catch (error) {
       console.error('Failed to mark order as delivered:', error)
-      alert('Failed to mark order as delivered. Please try again.')
+      alert(`❌ ${error instanceof Error ? error.message : 'Failed to mark order as delivered. Please try again.'}`)
     }
   }
 
@@ -358,10 +360,15 @@ export default function OrdersPage() {
                             Return/Exchange
                           </Button>
                         )}
-                        {order.trackingNumber && (
-                          <Button variant="outline" size="sm" className="flex items-center gap-2 bg-transparent">
-                            <Truck className="h-4 w-4" />
-                            Track Package
+                        {order.status === "shipped" && (
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => handleMarkAsDelivered(order.id)}
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            Mark as Delivered
                           </Button>
                         )}
                       </div>
@@ -474,6 +481,9 @@ export default function OrdersPage() {
                     <div className="space-y-1">
                       <p>{selectedOrder.shippingAddress.name || selectedOrder.shippingAddress.fullName}</p>
                       <p>{selectedOrder.shippingAddress.address || selectedOrder.shippingAddress.street}</p>
+                      {selectedOrder.shippingAddress.barangay && (
+                        <p>{selectedOrder.shippingAddress.barangay}</p>
+                      )}
                       <p>
                         {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.province || selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.postalCode || selectedOrder.shippingAddress.zipCode}
                       </p>
@@ -509,7 +519,7 @@ export default function OrdersPage() {
               </div>
 
               {/* Action Buttons */}
-              {selectedOrder.status !== 'delivered' && selectedOrder.status !== 'cancelled' && (
+              {selectedOrder.status === 'shipped' && (
                 <div className="flex gap-2 pt-4 border-t">
                   <Button 
                     onClick={() => handleMarkAsDelivered(selectedOrder.id)}
