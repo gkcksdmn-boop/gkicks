@@ -61,6 +61,23 @@ export function WishlistItemModal({ item, isOpen, onClose, onAddToCart }: Wishli
     }
   }
 
+  // Helper to normalize sizes into an array when coming from API/DB
+  const normalizeSizes = (): string[] => {
+    if (item && Array.isArray(item.sizes)) {
+      return (item.sizes as string[]).filter(Boolean)
+    }
+    return []
+  }
+
+  // Derive all sizes for a color from stock data when available
+  const getAllSizesForColor = (color: string): string[] => {
+    const colorStock = stockData[color]
+    if (colorStock && typeof colorStock === 'object') {
+      return Object.keys(colorStock).sort((a, b) => Number(a) - Number(b))
+    }
+    return normalizeSizes().sort((a, b) => Number(a) - Number(b))
+  }
+
   // Get available colors (colors that have at least one size in stock)
   const getAvailableColors = (): string[] => {
     if (!item?.colors || item.colors.length === 0) return []
@@ -74,15 +91,23 @@ export function WishlistItemModal({ item, isOpen, onClose, onAddToCart }: Wishli
 
   // Get available sizes for a specific color (sizes that are in stock)
   const getAvailableSizes = (color: string): string[] => {
-    if (!item?.sizes || item.sizes.length === 0) return []
-    
     const colorStock = stockData[color]
-    if (!colorStock) return []
-    
-    return item.sizes.filter(size => {
-      const stock = colorStock[size]
-      return typeof stock === 'number' && stock > 0
-    }).sort((a, b) => Number(a) - Number(b))
+    if (colorStock && typeof colorStock === 'object') {
+      return Object.entries(colorStock)
+        .filter(([, stock]) => typeof stock === 'number' && stock > 0)
+        .map(([size]) => size)
+        .sort((a, b) => Number(a) - Number(b))
+    }
+
+    const sizes = normalizeSizes()
+    if (sizes.length === 0) return []
+
+    return sizes
+      .filter(size => {
+        const stock = getStockCount(color, size)
+        return typeof stock === 'number' && stock > 0
+      })
+      .sort((a, b) => Number(a) - Number(b))
   }
 
   // Get stock count for a specific color/size combination
@@ -252,9 +277,9 @@ export function WishlistItemModal({ item, isOpen, onClose, onAddToCart }: Wishli
             <label className="text-sm font-medium">Size</label>
             {loading ? (
               <div className="text-sm text-muted-foreground">Loading stock information...</div>
-            ) : selectedColor && selectedColor !== "Default" && item.sizes && item.sizes.length > 0 ? (
+            ) : selectedColor && selectedColor !== "Default" && getAllSizesForColor(selectedColor).length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {item.sizes.map((size) => {
+                {getAllSizesForColor(selectedColor).map((size) => {
                   const stock = getStockCount(selectedColor, size)
                   const hasStock = stock > 0
                   

@@ -15,7 +15,11 @@ import { useToast } from "@/hooks/use-toast"
 import { WishlistItemModal } from "@/components/wishlist-item-modal"
 import Image from "next/image"
 
+
+
 export default function WishlistPage() {
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 2 }).format(amount)
+
   const { state: wishlistState, removeFromWishlist, clearWishlist } = useWishlist()
   const { addItem } = useCart()
   const router = useRouter()
@@ -45,23 +49,23 @@ export default function WishlistPage() {
 
     toast({
       title: "Added to Cart",
-      description: `${item.name} (${selectedColor}, ${selectedSize}) has been added to your cart and removed from wishlist.`,
+      description: `${item.name} (${selectedColor}, ${selectedSize}) has been added to your cart and removed from favorites.`,
     })
   }
 
   const handleRemoveItem = (itemId: string) => {
     removeFromWishlist(parseInt(itemId))
     toast({
-      title: "Removed from Wishlist",
-      description: "Item has been removed from your wishlist.",
+      title: "removed from favorites",
+      description: "Item has been removed from your favorites.",
     })
   }
 
   const handleClearWishlist = () => {
     clearWishlist()
     toast({
-      title: "Wishlist Cleared",
-      description: "All items have been removed from your wishlist.",
+      title: "Favorites Cleared",
+      description: "All items have been removed from your favorites.",
     })
   }
 
@@ -105,10 +109,10 @@ export default function WishlistPage() {
             <CardContent className="text-center py-8 sm:py-12">
               <Heart className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
               <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-yellow-400 mb-2">
-                Your wishlist is empty
+                Your favorites list is empty
               </h3>
               <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
-                Save items you love to your wishlist and shop them later.
+                Save items you love to your favorites and shop them later.
               </p>
               <Button
                 onClick={() => router.push("/")}
@@ -138,7 +142,7 @@ export default function WishlistPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-foreground dark:text-yellow-400">
-                My Wishlist
+                My Favorites
               </h1>
               <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
                 {wishlistState.items.length} {wishlistState.items.length === 1 ? "item" : "items"} saved
@@ -159,7 +163,7 @@ export default function WishlistPage() {
                 onClick={handleClearWishlist}
                 className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20 bg-transparent"
               >
-                Clear Wishlist
+                Clear Favorites
               </Button>
             </div>
           </div>
@@ -270,16 +274,16 @@ export default function WishlistPage() {
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-bold text-foreground">
-                          ₱{item.price.toLocaleString()}
+                          {formatCurrency(item.price)}
                         </span>
                         {item.originalPrice && item.originalPrice > item.price && (
                           <span className="text-sm text-muted-foreground line-through">
-                            ₱{item.originalPrice.toLocaleString()}
+                            {formatCurrency(item.originalPrice)}
                           </span>
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        ₱{(item.price * 1.12).toLocaleString()} (incl. 12% VAT)
+                        {formatCurrency(item.price * 1.12)} (incl. 12% VAT)
                       </p>
                     </div>
 
@@ -345,3 +349,18 @@ export default function WishlistPage() {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

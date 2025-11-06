@@ -23,7 +23,10 @@ import type { Product } from "@/lib/product-data"
 
 
 
+
 export default function ProductPage() {
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 2 }).format(amount)
+
   const params = useParams()
   const productId = Number(params?.id)
   const [mounted, setMounted] = useState(false)
@@ -387,8 +390,8 @@ export default function ProductPage() {
     if (isWishlisted) {
       removeFromWishlist(product.id)
       toast({
-        title: "Removed from Wishlist",
-        description: `${product.name} has been removed from your wishlist.`,
+        title: "Removed from Favorites",
+        description: `${product.name} has been removed from your favorites.`,
       })
     } else {
       // Use the currently selected image, just like the cart does
@@ -398,8 +401,8 @@ export default function ProductPage() {
       }
       addToWishlist(productWithCurrentImage)
       toast({
-        title: "Added to Wishlist",
-        description: `${product.name} has been added to your wishlist.`,
+        title: "Added to Favorites",
+        description: `${product.name} has been added to your favorites.`,
       })
     }
   }
@@ -575,12 +578,12 @@ export default function ProductPage() {
                 {/* Price */}
                 <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-2">
                   <span className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-yellow-400">
-                    ₱{finalPrice.toLocaleString()}
+                    {formatCurrency(finalPrice)}
                   </span>
                   <div className="flex items-center space-x-2 sm:space-x-4">
                     {finalOriginalPrice && (
                       <span className="text-lg sm:text-xl text-gray-500 dark:text-gray-400 line-through">
-                        ₱{finalOriginalPrice.toLocaleString()}
+                        {formatCurrency(finalOriginalPrice)}
                       </span>
                     )}
                     {savingsAmount > 0 && (
@@ -714,7 +717,7 @@ export default function ProductPage() {
                   className="w-full border-2 border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500 py-3 sm:py-4 text-sm sm:text-base font-medium bg-transparent dark:bg-gray-800 text-gray-900 dark:text-gray-300 min-h-[48px]"
                 >
                   <Heart className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 ${isWishlisted ? "fill-current text-red-500" : ""}`} />
-                  {authLoading ? "Loading..." : "Add to Wishlist"}
+                  {authLoading ? "Loading..." : "Add to Favorites"}
                 </Button>
               </div>
 
@@ -754,7 +757,7 @@ export default function ProductPage() {
               </h2>
 
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-6 sm:mb-8 leading-relaxed">
-                Please log in to add items to your cart or wishlist and enjoy a personalized shopping experience.
+                Please log in to add items to your cart or favorites and enjoy a personalized shopping experience.
               </p>
 
               <div className="space-y-3">
@@ -779,3 +782,17 @@ export default function ProductPage() {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

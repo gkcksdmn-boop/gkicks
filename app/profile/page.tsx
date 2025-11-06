@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 export const dynamic = 'force-dynamic'
 
@@ -108,7 +108,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user && !authLoading && tokenReady) {
-      console.log('👤 User changed and token ready, fetching profile data for:', user.email)
+      console.log('ðŸ‘¤ User changed and token ready, fetching profile data for:', user.email)
       fetchProfileData()
     }
   }, [user, authLoading, tokenReady])
@@ -116,7 +116,7 @@ export default function ProfilePage() {
   // Additional effect to ensure data is loaded on component mount
   useEffect(() => {
     if (user && tokenReady && !profileDataLoaded) {
-      console.log('🔄 Component mounted or data not loaded, ensuring profile data is fetched')
+      console.log('ðŸ”„ Component mounted or data not loaded, ensuring profile data is fetched')
       fetchProfileData()
     }
   }, [user, tokenReady, profileDataLoaded])
@@ -124,7 +124,7 @@ export default function ProfilePage() {
   // Effect to log when profile data changes for debugging
   useEffect(() => {
     if (profileDataLoaded) {
-      console.log('📊 Profile data loaded and updated:', {
+      console.log('ðŸ“Š Profile data loaded and updated:', {
         preferences: profileData.preferences,
         dataLoaded: profileDataLoaded
       })
@@ -186,14 +186,14 @@ export default function ProfilePage() {
 
       if (response.ok) {
         const profile = await response.json()
-        console.log('✅ Frontend: Profile data received:', JSON.stringify(profile, null, 2))
-        console.log('📋 Frontend: Setting profile data with:', {
+        console.log('âœ… Frontend: Profile data received:', JSON.stringify(profile, null, 2))
+        console.log('ðŸ“‹ Frontend: Setting profile data with:', {
           first_name: profile.first_name,
           last_name: profile.last_name,
           phone: profile.phone,
           avatar_url: profile.avatar_url
         })
-        console.log('📋 Profile data received:', profile)
+        console.log('ðŸ“‹ Profile data received:', profile)
         
         // Parse preferences if it's a string
         let parsedPreferences = profile.preferences;
@@ -228,10 +228,10 @@ export default function ProfilePage() {
             currency: "PHP",
           },
         };
-        console.log('🔄 Frontend: Setting new profile data:', newProfileData);
+        console.log('ðŸ”„ Frontend: Setting new profile data:', newProfileData);
         setProfileData(newProfileData);
         setProfileDataLoaded(true); // Mark as loaded
-        console.log('✅ Frontend: Profile data state updated and marked as loaded');
+        console.log('âœ… Frontend: Profile data state updated and marked as loaded');
       } else {
         console.error('Failed to fetch profile:', response.status, response.statusText)
         // Create default profile data
@@ -334,10 +334,10 @@ export default function ProfilePage() {
   }
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('🔍 AVATAR: handleAvatarUpload called');
+    console.log('ðŸ” AVATAR: handleAvatarUpload called');
     
     if (!user) {
-      console.log('❌ AVATAR: No user found');
+      console.log('âŒ AVATAR: No user found');
       toast({
         title: 'Not logged in',
         description: 'Please log in to upload an avatar.',
@@ -347,24 +347,24 @@ export default function ProfilePage() {
     }
 
     if (!event.target.files || event.target.files.length === 0) {
-      console.log('❌ AVATAR: No files selected');
+      console.log('âŒ AVATAR: No files selected');
       return
     }
 
     const file = event.target.files[0]
-    console.log('📁 AVATAR: File selected:', file.name, 'Size:', file.size, 'Type:', file.type);
+    console.log('ðŸ“ AVATAR: File selected:', file.name, 'Size:', file.size, 'Type:', file.type);
 
     setLoading(true)
     try {
       const formData = new FormData()
       formData.append('file', file)
-      console.log('📤 AVATAR: Uploading file to /api/upload-avatar');
+      console.log('ðŸ“¤ AVATAR: Uploading file to /api/upload-avatar');
       
       // Get the token for authentication
       const token = localStorage.getItem('auth_token')
-      console.log('🔑 AVATAR: Token for upload:', token ? 'Present' : 'Missing');
-      console.log('🔑 AVATAR: Token length:', token ? token.length : 0);
-      console.log('🔑 AVATAR: Token preview:', token ? token.substring(0, 50) + '...' : 'None');
+      console.log('ðŸ”‘ AVATAR: Token for upload:', token ? 'Present' : 'Missing');
+      console.log('ðŸ”‘ AVATAR: Token length:', token ? token.length : 0);
+      console.log('ðŸ”‘ AVATAR: Token preview:', token ? token.substring(0, 50) + '...' : 'None');
 
       const response = await fetch('/api/upload-avatar', {
         method: 'POST',
@@ -374,11 +374,11 @@ export default function ProfilePage() {
         body: formData
       })
 
-      console.log('📥 AVATAR: Upload response status:', response.status);
+      console.log('ðŸ“¥ AVATAR: Upload response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.log('❌ AVATAR: Upload failed:', errorData);
+        console.log('âŒ AVATAR: Upload failed:', errorData);
         toast({
           title: 'Upload failed',
           description: errorData.error || 'Failed to upload avatar',
@@ -388,25 +388,25 @@ export default function ProfilePage() {
       }
 
       const data = await response.json()
-      console.log('✅ AVATAR: Upload successful, response data:', data)
+      console.log('âœ… AVATAR: Upload successful, response data:', data)
       
       // Update the profile data with the new avatar URL
-      console.log('🔄 AVATAR: Updating profile data with new avatar URL:', data.url);
+      console.log('ðŸ”„ AVATAR: Updating profile data with new avatar URL:', data.url);
       setProfileData(prev => ({ ...prev, avatar_url: data.url }))
       
       // Also update the auth context
-      console.log('🔄 AVATAR: Updating auth context with avatar:', data.url);
+      console.log('ðŸ”„ AVATAR: Updating auth context with avatar:', data.url);
       await updateProfile({
         avatar: data.url,
       })
-      console.log('✅ AVATAR: Auth context updated successfully');
+      console.log('âœ… AVATAR: Auth context updated successfully');
 
       toast({
         title: 'Success',
         description: data.message || 'Avatar updated successfully!',
       })
     } catch (error) {
-      console.log('❌ AVATAR: Unexpected error:', error);
+      console.log('âŒ AVATAR: Unexpected error:', error);
       toast({
         title: 'Error',
         description: 'Unexpected error occurred during avatar upload',
@@ -418,16 +418,16 @@ export default function ProfilePage() {
   }
 
   const handleSaveProfile = async () => {
-    console.log('🔍 PROFILE: handleSaveProfile called');
-    console.log('🔍 PROFILE: user state:', user);
-    console.log('🔍 PROFILE: profileData:', profileData);
+    console.log('ðŸ” PROFILE: handleSaveProfile called');
+    console.log('ðŸ” PROFILE: user state:', user);
+    console.log('ðŸ” PROFILE: profileData:', profileData);
     
     if (!user) {
-      console.log('❌ PROFILE: No user found, aborting save');
+      console.log('âŒ PROFILE: No user found, aborting save');
       return
     }
 
-    console.log('✅ PROFILE: User found, proceeding with save');
+    console.log('âœ… PROFILE: User found, proceeding with save');
     setLoading(true)
     try {
       const token = localStorage.getItem('auth_token')
@@ -455,8 +455,8 @@ export default function ProfilePage() {
         preferences: profileData.preferences,
       }
       
-      console.log('📝 PROFILE: Sending request body:', requestBody);
-      console.log('🔗 PROFILE: Making PUT request to /api/profiles');
+      console.log('ðŸ“ PROFILE: Sending request body:', requestBody);
+      console.log('ðŸ”— PROFILE: Making PUT request to /api/profiles');
       
       const response = await fetch('/api/profiles', {
         method: 'PUT',
@@ -728,7 +728,7 @@ export default function ProfilePage() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2 text-muted-foreground">
                       <Heart className="h-4 w-4" />
-                      Wishlist Items
+                      Favorites Items
                     </span>
                     <Badge variant="secondary">{wishlistState.itemCount}</Badge>
                   </div>
@@ -752,7 +752,7 @@ export default function ProfilePage() {
                   <Button variant="outline" className="w-full" asChild>
                     <Link href="/wishlist">
                       <Heart className="h-4 w-4 mr-2" />
-                      Wishlist
+                      Favorites
                     </Link>
                   </Button>
                   <Button variant="outline" className="w-full" asChild>
@@ -894,9 +894,9 @@ export default function ProfilePage() {
 
                     <Button
                       onClick={(e) => {
-                        console.log('🔘 PROFILE: Save button clicked!', e);
-                        console.log('🔘 PROFILE: loading state:', loading);
-                        console.log('🔘 PROFILE: Current profileData:', profileData);
+                        console.log('ðŸ”˜ PROFILE: Save button clicked!', e);
+                        console.log('ðŸ”˜ PROFILE: loading state:', loading);
+                        console.log('ðŸ”˜ PROFILE: Current profileData:', profileData);
                         handleSaveProfile();
                       }}
                       disabled={loading}
@@ -1164,9 +1164,9 @@ export default function ProfilePage() {
 
                         <Button
                           onClick={(e) => {
-                            console.log('🔘 PROFILE: Save Preferences button clicked!', e);
-                            console.log('🔘 PROFILE: loading state:', loading);
-                            console.log('🔘 PROFILE: Current profileData:', profileData);
+                            console.log('ðŸ”˜ PROFILE: Save Preferences button clicked!', e);
+                            console.log('ðŸ”˜ PROFILE: loading state:', loading);
+                            console.log('ðŸ”˜ PROFILE: Current profileData:', profileData);
                             handleSaveProfile();
                           }}
                           disabled={loading || !profileDataLoaded}
@@ -1186,3 +1186,4 @@ export default function ProfilePage() {
     </div>
   )
 }
+

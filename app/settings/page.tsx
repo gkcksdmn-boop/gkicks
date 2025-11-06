@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
@@ -284,7 +284,7 @@ export default function SettingsPage() {
                           <ul className="list-disc list-inside mt-2 space-y-1">
                             <li>Your profile information</li>
                             <li>Order history</li>
-                            <li>Wishlist items</li>
+                            <li>Favorites items</li>
                             <li>Saved addresses</li>
                             <li>All account preferences</li>
                           </ul>
@@ -320,3 +320,4 @@ export default function SettingsPage() {
     </div>
   )
 }
+

@@ -1397,7 +1397,23 @@ export default function CartPage() {
 
                 {/* Confirm Button */}
                 <Button 
-                  onClick={() => {
+                  onClick={async () => {
+                    // Ensure a screenshot is present; try uploading if a file is selected
+                    if (!paymentScreenshot) {
+                      if (screenshotFile) {
+                        try {
+                          await uploadScreenshot()
+                        } catch (err) {
+                          toast({
+                            title: "Upload Failed",
+                            description: "Could not upload your payment screenshot. Please try again.",
+                            variant: "destructive"
+                          })
+                          return
+                        }
+                      }
+                    }
+
                     if (!paymentScreenshot) {
                       toast({
                         title: "Screenshot Required",
@@ -1406,10 +1422,38 @@ export default function CartPage() {
                       })
                       return
                     }
+
+                    // Validate payment reference if applicable
+                    if (qrPaymentMethod === "gcash" || qrPaymentMethod === "maya") {
+                      if (!paymentReference) {
+                        toast({
+                          title: "Reference Required",
+                          description: qrPaymentMethod === "gcash" ? "Enter the 13-digit GCash reference number." : "Enter the 12-character Maya reference ID.",
+                          variant: "destructive",
+                        })
+                        return
+                      }
+
+                      const isValid = qrPaymentMethod === "gcash"
+                        ? /^\d{13}$/.test(paymentReference)
+                        : /^[A-Za-z0-9]{12}$/.test(paymentReference)
+
+                      if (!isValid) {
+                        toast({
+                          title: "Invalid Reference",
+                          description: qrPaymentMethod === "gcash" ? "Reference must be 13 digits." : "Reference must be 12 alphanumeric characters.",
+                          variant: "destructive",
+                        })
+                        return
+                      }
+                    }
+
+                    // Close dialog and reveal checkout form so user can place order
                     setShowQRDialog(false)
+                    setShowCheckout(true)
                   }} 
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg" 
-                  disabled={!paymentScreenshot}
+                  disabled={isUploadingScreenshot || !!paymentReferenceError}
                 >
                   <span className="mr-2">✓</span>
                   Confirm Payment Completed

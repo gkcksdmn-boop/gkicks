@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { executeQuery } from '@/lib/database/mysql'
+import { getPricingSettings, calculatePrice } from '@/lib/pricing-utils'
 import jwt from 'jsonwebtoken'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret'
@@ -66,6 +67,9 @@ export async function GET(request: NextRequest) {
 
     const results = await executeQuery(query, [userId]) as any[]
     
+    // Load pricing settings once to apply to all items
+    const pricingSettings = await getPricingSettings()
+    
     console.log('🔍 API: Raw wishlist data from database:', results.map(item => ({ id: item.id, name: item.name, image: item.image, hasImage: !!item.image })))
     console.log('🔍 API: Total wishlist items found:', results.length)
     
@@ -94,12 +98,22 @@ export async function GET(request: NextRequest) {
         imageLength: item.image ? item.image.length : 0
       })
       
+      // Apply pricing calculations (admin fee, markup, VAT)
+      const basePrice = parseFloat(item.price)
+      const baseOriginal = item.original_price !== null && item.original_price !== undefined
+        ? parseFloat(item.original_price)
+        : undefined
+      const finalPrice = isNaN(basePrice) ? 0 : calculatePrice(basePrice, pricingSettings)
+      const finalOriginalPrice = baseOriginal !== undefined && !isNaN(baseOriginal)
+        ? calculatePrice(baseOriginal, pricingSettings)
+        : undefined
+
       return {
         id: item.id,
         name: item.name,
         brand: item.brand,
-        price: item.price,
-        originalPrice: item.original_price,
+        price: finalPrice,
+        originalPrice: finalOriginalPrice,
         image: item.image,
         colors,
         category: item.category,

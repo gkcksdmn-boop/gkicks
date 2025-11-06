@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Facebook, MapPin, Phone, Mail, Clock, ChevronRight, ChevronDown } from "lucide-react"
 import Link from "next/link"
@@ -46,7 +46,7 @@ export function Footer() {
         { href: "/faq", label: "FAQ" },
         { href: "/orders", label: "Order Tracking" },
         { href: "/profile", label: "My Account" },
-        { href: "/wishlist", label: "Wishlist" },
+        { href: "/wishlist", label: "Favorites" },
         { href: "/settings", label: "Settings" }
       ]
     }
@@ -132,7 +132,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/wishlist" className="text-muted-foreground hover:text-primary transition-colors text-sm">
-                  Wishlist
+                  Favorites
                 </Link>
               </li>
               <li>
@@ -186,7 +186,7 @@ export function Footer() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center justify-center px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition-colors text-sm font-medium"
                           >
-                            🚗 Open in Waze
+                            ðŸš— Open in Waze
                           </a>
                         </div>
                       </div>
@@ -237,7 +237,7 @@ export function Footer() {
           <div className="border-t border-border pt-8">
             <div className="flex flex-wrap flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
               <div className="text-sm text-muted-foreground text-center sm:text-left">
-                © 2025 GKicks. All rights reserved. Built with passion for sneaker enthusiasts.
+                Â© 2025 GKicks. All rights reserved. Built with passion for sneaker enthusiasts.
               </div>
               <div className="flex flex-wrap justify-center sm:justify-end space-x-6 text-sm">
                 <Link
@@ -387,7 +387,7 @@ export function Footer() {
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center justify-center px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition-colors text-sm font-medium"
                               >
-                                🚗 Open in Waze
+                                ðŸš— Open in Waze
                               </a>
                             </div>
                           </div>
@@ -438,7 +438,7 @@ export function Footer() {
               </Link>
             </div>
             <p className="text-muted-foreground text-xs">
-              © 2025 GKicks. All rights reserved.
+              Â© 2025 GKicks. All rights reserved.
             </p>
           </div>
         </div>
@@ -446,3 +446,4 @@ export function Footer() {
     </footer>
   )
 }
+

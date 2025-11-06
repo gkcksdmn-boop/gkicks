@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import type React from "react"
 
@@ -180,7 +180,7 @@ export function Header({ onSearch }: HeaderProps) {
   const hasStaffAccess = () => {
     if (!user) return false
     // Debug logging to help troubleshoot staff access
-    console.log('🔍 Header: Checking staff access for user:', {
+    console.log('ðŸ” Header: Checking staff access for user:', {
       email: user.email,
       role: user.role,
       hasStaffRole: user.role === "staff",
@@ -191,7 +191,7 @@ export function Header({ onSearch }: HeaderProps) {
 
   const getUserDisplayName = () => {
     // Debug logging to help troubleshoot user display name
-    console.log('🔍 Header: Getting display name for user:', {
+    console.log('ðŸ” Header: Getting display name for user:', {
       email: user?.email,
       role: user?.role,
       firstName: user?.firstName
@@ -271,7 +271,7 @@ export function Header({ onSearch }: HeaderProps) {
                           {/* <img src={p.image_url} alt="" className="h-8 w-8 rounded object-cover" /> */}
                           <div className="flex-1">
                             <div className="text-sm font-medium text-foreground">{p.name}</div>
-                            <div className="text-xs text-muted-foreground">{p.brand} · {p.category}</div>
+                            <div className="text-xs text-muted-foreground">{p.brand} Â· {p.category}</div>
                           </div>
                         </button>
                       </li>
@@ -310,7 +310,7 @@ export function Header({ onSearch }: HeaderProps) {
                         >
                           <div className="flex-1">
                             <div className="text-sm font-medium text-foreground">{p.name}</div>
-                            <div className="text-xs text-muted-foreground">{p.brand} · {p.category}</div>
+                            <div className="text-xs text-muted-foreground">{p.brand} Â· {p.category}</div>
                           </div>
                         </button>
                       </li>
@@ -335,7 +335,7 @@ export function Header({ onSearch }: HeaderProps) {
               <span className="sr-only">Toggle theme</span>
             </Button>
 
-            {/* Wishlist */}
+            {/* Favorites */}
             <Button variant="ghost" size="sm" asChild className={`relative hover:text-yellow-400 ${iconColorClass} h-8 w-8 p-0 hidden md:flex`}>
               <Link href="/wishlist">
                 <Heart className="h-4 w-4" />
@@ -344,7 +344,7 @@ export function Header({ onSearch }: HeaderProps) {
                     {wishlistCount}
                   </Badge>
                 )}
-                <span className="sr-only">Wishlist</span>
+                <span className="sr-only">Favorites</span>
               </Link>
             </Button>
 
@@ -491,7 +491,7 @@ export function Header({ onSearch }: HeaderProps) {
                   <DropdownMenuItem asChild>
                     <Link href="/wishlist" className="flex items-center">
                       <Heart className="mr-2 h-4 w-4" />
-                      Wishlist
+                      Favorites
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
@@ -634,7 +634,7 @@ export function Header({ onSearch }: HeaderProps) {
                   </div>
                 )}
 
-                {/* Cart & Wishlist */}
+                {/* Cart & Favorites */}
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     href="/cart"
@@ -650,7 +650,7 @@ export function Header({ onSearch }: HeaderProps) {
                     onClick={() => setIsMenuOpen(false)}
                   >
                     <Heart className="h-4 w-4" />
-                    <span className="text-sm font-medium">Wishlist ({wishlistCount})</span>
+                    <span className="text-sm font-medium">Favorites ({wishlistCount})</span>
                   </Link>
                 </div>
               </div>
@@ -761,3 +761,5 @@ export function Header({ onSearch }: HeaderProps) {
     </header>
   )
 }
+
+
